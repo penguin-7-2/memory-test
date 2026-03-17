@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>記憶與反應綜合測試</title>
+    <title>記憶與反應測試</title>
     <style>
         body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f4f7f6; overflow: hidden; touch-action: manipulation; }
         #game-container { text-align: center; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 500px; display: flex; flex-direction: column; justify-content: space-between; min-height: 520px; }
@@ -37,14 +37,14 @@
         <h2>設定目標數字</h2>
         <p class="info">輸入 1-9 的數字作為反應目標</p>
         <input type="number" id="setup-target" min="1" max="9" pattern="[1-9]*" inputmode="numeric" oninput="validateTarget(this)">
-        <p class="info">接著選擇記憶難度開始測試</p>
+        <p class="info">選擇負荷強度</p>
         <div class="mode-btns">
             <button id="btn-4" onclick="initGame(4)" disabled>4 位數</button>
             <button id="btn-8" onclick="initGame(8)" disabled>8 位數</button>
             <button id="btn-12" onclick="initGame(12)" disabled>12 位數</button>
         </div>
         <div id="history-area">
-            <div id="history-title">最近測試紀錄</div>
+            <div id="history-title">測試紀錄</div>
             <div id="history-list"></div>
             <div class="history-controls">
                 <span class="history-link" onclick="downloadCSV()">下載 CSV 紀錄檔案</span>
@@ -56,13 +56,13 @@
     <div id="step1" class="hidden">
         <h2>請記下這 <span id="count-label"></span> 個數字</h2>
         <div id="memory-target"></div>
-        <button onclick="startDistraction()">記好了，開始測試</button>
+        <button onclick="startDistraction()">開始測試</button>
     </div>
 
     <div id="step2" class="hidden">
         <p class="info">看到 <strong id="info-target" style="color:#ff4757"></strong> 時請立即按紅色按鈕</p>
         <div id="display">準備...</div>
-        <div id="trigger-btn" onmousedown="handleTrigger(event)" ontouchstart="handleTrigger(event)">按這裡</div>
+        <div id="trigger-btn" onmousedown="handleTrigger(event)" ontouchstart="handleTrigger(event)"> </div>
     </div>
 
     <div id="step3" class="hidden">
