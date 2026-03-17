@@ -206,7 +206,7 @@
     }
 
     function clearHistory() {
-        if(confirm('確定要清除所有測試紀錄嗎？這將無法復原。')) {
+        if(confirm('確定要清除所有測試紀錄嗎？')) {
             localStorage.removeItem('reactionGameHistory');
             displayHistory();
         }
