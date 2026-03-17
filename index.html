@@ -6,20 +6,28 @@
     <title>記憶與反應綜合測試</title>
     <style>
         body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f4f7f6; overflow: hidden; touch-action: manipulation; }
-        #game-container { text-align: center; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 500px; }
+        #game-container { text-align: center; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 500px; display: flex; flex-direction: column; justify-content: space-between; min-height: 520px; }
+        #step-setup { display: flex; flex-direction: column; gap: 15px; }
         #display { font-size: 6rem; font-weight: bold; margin: 20px 0; height: 140px; color: #34495e; line-height: 140px; will-change: contents; }
         .hidden { display: none !important; }
         button { padding: 12px; font-size: 1.1rem; cursor: pointer; border: none; background: #4a90e2; color: white; border-radius: 10px; transition: 0.2s; font-weight: bold; width: 100%; margin: 5px 0; }
         button:active { transform: scale(0.98); }
         button:disabled { background: #cbd5e0; cursor: not-allowed; }
-        .mode-btns { display: flex; gap: 10px; margin-top: 15px; }
-        .mode-btns button { background: #6c757d; }
-        input { padding: 15px; font-size: 1.8rem; width: 90%; margin-bottom: 25px; text-align: center; letter-spacing: 4px; border: 3px solid #eee; border-radius: 12px; outline: none; }
+        .mode-btns { display: flex; gap: 10px; margin-top: 5px; margin-bottom: 20px; }
+        .mode-btns button { background: #6c757d; font-size: 1rem; }
+        input { padding: 15px; font-size: 1.8rem; width: 90%; margin-bottom: 10px; text-align: center; letter-spacing: 4px; border: 3px solid #eee; border-radius: 12px; outline: none; margin-left: auto; margin-right: auto; }
         .highlight { color: #ff4757; font-size: 7.5rem; }
-        .info { color: #7f8c8d; margin-bottom: 20px; font-size: 0.95rem; }
+        .info { color: #7f8c8d; margin-bottom: 15px; font-size: 0.95rem; }
         #memory-target { font-size: 2.5rem; letter-spacing: 5px; color: #2980b9; margin: 20px 0; font-weight: 900; word-break: break-all; min-height: 3rem; }
         #trigger-btn { background: #ff4757; height: 100px; width: 100px; border-radius: 50%; font-size: 1.2rem; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(255, 71, 87, 0.4); user-select: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
-        #setup-target { width: 60px; font-size: 2.5rem; padding: 10px; margin-bottom: 10px; }
+        #setup-target { width: 60px; font-size: 2.5rem; padding: 10px; }
+        #history-area { background: #f9fafb; padding: 15px; border-radius: 12px; border: 1px solid #edf2f7; text-align: left; margin-top: auto; }
+        #history-title { font-size: 1.1rem; font-weight: bold; color: #2d3748; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+        #history-list { font-size: 0.9rem; color: #4a5568; max-height: 160px; overflow-y: auto; line-height: 1.6; }
+        .history-item { padding: 4px 0; border-bottom: 1px dashed #e2e8f0; white-space: nowrap; }
+        .history-controls { margin-top: 12px; display: flex; gap: 15px; font-size: 0.95rem; font-weight: bold; }
+        .history-link { color: #3182ce; cursor: pointer; text-decoration: underline; }
+        .history-link.clear { color: #e53e3e; }
     </style>
 </head>
 <body>
@@ -29,10 +37,19 @@
         <h2>設定目標數字</h2>
         <p class="info">輸入 1-9 的數字作為反應目標</p>
         <input type="number" id="setup-target" min="1" max="9" pattern="[1-9]*" inputmode="numeric" oninput="validateTarget(this)">
+        <p class="info">接著選擇記憶難度開始測試</p>
         <div class="mode-btns">
             <button id="btn-4" onclick="initGame(4)" disabled>4 位數</button>
             <button id="btn-8" onclick="initGame(8)" disabled>8 位數</button>
             <button id="btn-12" onclick="initGame(12)" disabled>12 位數</button>
+        </div>
+        <div id="history-area">
+            <div id="history-title">最近測試紀錄</div>
+            <div id="history-list"></div>
+            <div class="history-controls">
+                <span class="history-link" onclick="downloadCSV()">下載 CSV 紀錄檔案</span>
+                <span class="history-link clear" onclick="clearHistory()">清除紀錄</span>
+            </div>
         </div>
     </div>
 
@@ -73,6 +90,8 @@
     let reactionTarget = 5;
     let lastTargetCooldown = 0;
 
+    window.onload = function() { displayHistory(); };
+
     function validateTarget(input) {
         input.value = input.value.replace(/[^1-9]/g, '').slice(0, 1);
         const isValid = input.value !== "";
@@ -99,12 +118,10 @@
         const displayDiv = document.getElementById('display');
         gameActive = true;
         lastTargetCooldown = 0;
-
         const tick = () => {
             if (!gameActive) return;
             let currentNum;
             const roll = Math.random();
-
             if (roll < 0.2 && lastTargetCooldown <= 0) {
                 currentNum = reactionTarget;
                 startTime = performance.now(); 
@@ -114,7 +131,6 @@
                 if (currentNum === reactionTarget) currentNum = (reactionTarget % 9) + 1;
                 lastTargetCooldown--;
             }
-
             displayDiv.innerText = currentNum;
             displayDiv.className = currentNum === reactionTarget ? 'highlight' : '';
             timerId = setTimeout(tick, 500);
@@ -144,14 +160,56 @@
         let correctCount = 0;
         for(let i=0; i < memoryLength; i++) if(userInput[i] === targetNumbers[i]) correctCount++;
         let accuracy = ((correctCount / memoryLength) * 100).toFixed(1);
+        saveResult(memoryLength, reactionTarget, reactionTime.toFixed(0), accuracy);
         document.getElementById('final-result').innerHTML = `
-            <strong>◎ 反應速度 (目標: ${reactionTarget}):</strong><br>
+            <strong>◎ 反應速度:</strong><br>
             <span style="color:#ff4757; font-size:1.4rem; font-weight:bold;">${reactionTime.toFixed(0)} ms</span><br><br>
             <strong>◎ 記憶準確度 (${memoryLength}位):</strong><br>
-            正確答案：${targetNumbers}<br>
-            你的輸入：${userInput || "無"}<br>
+            正確答案：<span style="word-break:break-all;">${targetNumbers}</span><br>
             準確率：<span style="color:#4a90e2; font-size:1.4rem; font-weight:bold;">${accuracy}%</span>
         `;
+    }
+
+    function saveResult(len, target, rt, acc) {
+        let history = JSON.parse(localStorage.getItem('reactionGameHistory') || '[]');
+        const now = new Date();
+        const timeStr = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
+        history.unshift({ time: timeStr, len: len, target: target, rt: rt, acc: acc });
+        localStorage.setItem('reactionGameHistory', JSON.stringify(history));
+    }
+
+    function displayHistory() {
+        let history = JSON.parse(localStorage.getItem('reactionGameHistory') || '[]');
+        const list = document.getElementById('history-list');
+        if (history.length === 0) { list.innerHTML = '<div style="text-align:center; padding:10px; color:#a0aec0;">尚無測試紀錄</div>'; return; }
+        list.innerHTML = history.slice(0, 10).map(h => `
+            <div class="history-item">${h.time.split(' ')[1]} | ${h.len}位數 | ${h.rt}ms | ${h.acc}%正確</div>
+        `).join('');
+    }
+
+    function downloadCSV() {
+        let history = JSON.parse(localStorage.getItem('reactionGameHistory') || '[]');
+        if (history.length === 0) { alert('沒有紀錄可供下載'); return; }
+        let csvContent = "\uFEFF時間,記憶位數,目標數字,反應時間(ms),正確率(%)\n";
+        history.forEach(h => {
+            csvContent += `${h.time},${h.len},${h.target},${h.rt},${h.acc}\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "測試紀錄_反應與記憶.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function clearHistory() {
+        if(confirm('確定要清除所有測試紀錄嗎？這將無法復原。')) {
+            localStorage.removeItem('reactionGameHistory');
+            displayHistory();
+        }
     }
 </script>
 </body>
