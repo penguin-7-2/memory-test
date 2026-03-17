@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>記憶與反應綜合測試</title>
+    <style>
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f4f7f6; overflow: hidden; touch-action: manipulation; }
+        #game-container { text-align: center; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 90%; max-width: 500px; }
+        #display { font-size: 6rem; font-weight: bold; margin: 20px 0; height: 140px; color: #34495e; line-height: 140px; will-change: contents; }
+        .hidden { display: none !important; }
+        button { padding: 12px; font-size: 1.1rem; cursor: pointer; border: none; background: #4a90e2; color: white; border-radius: 10px; transition: 0.2s; font-weight: bold; width: 100%; margin: 5px 0; }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #cbd5e0; cursor: not-allowed; }
+        .mode-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .mode-btns button { background: #6c757d; }
+        input { padding: 15px; font-size: 1.8rem; width: 90%; margin-bottom: 25px; text-align: center; letter-spacing: 4px; border: 3px solid #eee; border-radius: 12px; outline: none; }
+        .highlight { color: #ff4757; font-size: 7.5rem; }
+        .info { color: #7f8c8d; margin-bottom: 20px; font-size: 0.95rem; }
+        #memory-target { font-size: 2.5rem; letter-spacing: 5px; color: #2980b9; margin: 20px 0; font-weight: 900; word-break: break-all; min-height: 3rem; }
+        #trigger-btn { background: #ff4757; height: 100px; width: 100px; border-radius: 50%; font-size: 1.2rem; margin: 0 auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(255, 71, 87, 0.4); user-select: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+        #setup-target { width: 60px; font-size: 2.5rem; padding: 10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="step-setup">
+        <h2>設定目標數字</h2>
+        <p class="info">輸入 1-9 的數字作為反應目標</p>
+        <input type="number" id="setup-target" min="1" max="9" pattern="[1-9]*" inputmode="numeric" oninput="validateTarget(this)">
+        <div class="mode-btns">
+            <button id="btn-4" onclick="initGame(4)" disabled>4 位數</button>
+            <button id="btn-8" onclick="initGame(8)" disabled>8 位數</button>
+            <button id="btn-12" onclick="initGame(12)" disabled>12 位數</button>
+        </div>
+    </div>
+
+    <div id="step1" class="hidden">
+        <h2>請記下這 <span id="count-label"></span> 個數字</h2>
+        <div id="memory-target"></div>
+        <button onclick="startDistraction()">記好了，開始測試</button>
+    </div>
+
+    <div id="step2" class="hidden">
+        <p class="info">看到 <strong id="info-target" style="color:#ff4757"></strong> 時請立即按紅色按鈕</p>
+        <div id="display">準備...</div>
+        <div id="trigger-btn" onmousedown="handleTrigger(event)" ontouchstart="handleTrigger(event)">按這裡</div>
+    </div>
+
+    <div id="step3" class="hidden">
+        <h3>請輸入剛才的數字</h3>
+        <input type="number" id="user-input" pattern="\d*" autocomplete="off">
+        <br>
+        <button onclick="showFinalReport()">提交結果</button>
+    </div>
+
+    <div id="step4" class="hidden">
+        <h2>測試分析報告</h2>
+        <div id="final-result" style="text-align: left; background: #f1f2f6; padding: 20px; border-radius: 15px; line-height: 1.8;"></div>
+        <br>
+        <button onclick="location.reload()">重新開始</button>
+    </div>
+</div>
+
+<script>
+    let targetNumbers = ""; 
+    let startTime = 0;      
+    let reactionTime = 0;   
+    let gameActive = false;
+    let timerId = null;
+    let memoryLength = 3;
+    let reactionTarget = 5;
+    let lastTargetCooldown = 0;
+
+    function validateTarget(input) {
+        input.value = input.value.replace(/[^1-9]/g, '').slice(0, 1);
+        const isValid = input.value !== "";
+        document.getElementById('btn-4').disabled = !isValid;
+        document.getElementById('btn-8').disabled = !isValid;
+        document.getElementById('btn-12').disabled = !isValid;
+        if (isValid) reactionTarget = parseInt(input.value);
+    }
+
+    function initGame(len) {
+        memoryLength = len;
+        targetNumbers = "";
+        for(let i=0; i<len; i++) targetNumbers += Math.floor(Math.random() * 10).toString();
+        document.getElementById('count-label').innerText = len;
+        document.getElementById('memory-target').innerText = targetNumbers;
+        document.getElementById('info-target').innerText = reactionTarget;
+        document.getElementById('step-setup').classList.add('hidden');
+        document.getElementById('step1').classList.remove('hidden');
+    }
+
+    function startDistraction() {
+        document.getElementById('step1').classList.add('hidden');
+        document.getElementById('step2').classList.remove('hidden');
+        const displayDiv = document.getElementById('display');
+        gameActive = true;
+        lastTargetCooldown = 0;
+
+        const tick = () => {
+            if (!gameActive) return;
+            let currentNum;
+            const roll = Math.random();
+
+            if (roll < 0.2 && lastTargetCooldown <= 0) {
+                currentNum = reactionTarget;
+                startTime = performance.now(); 
+                lastTargetCooldown = 3; 
+            } else {
+                currentNum = Math.floor(Math.random() * 9 + 1);
+                if (currentNum === reactionTarget) currentNum = (reactionTarget % 9) + 1;
+                lastTargetCooldown--;
+            }
+
+            displayDiv.innerText = currentNum;
+            displayDiv.className = currentNum === reactionTarget ? 'highlight' : '';
+            timerId = setTimeout(tick, 500);
+        };
+        tick();
+    }
+
+    function handleTrigger(e) {
+        if (e) e.preventDefault();
+        if (!gameActive) return;
+        if (document.getElementById('display').innerText === reactionTarget.toString()) {
+            reactionTime = performance.now() - startTime;
+            gameActive = false;
+            clearTimeout(timerId);
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+            setTimeout(() => document.getElementById('user-input').focus(), 200);
+        }
+    }
+
+    window.addEventListener('keydown', (e) => { if (e.code === 'Space') handleTrigger(e); });
+
+    function showFinalReport() {
+        const userInput = document.getElementById('user-input').value;
+        document.getElementById('step3').classList.add('hidden');
+        document.getElementById('step4').classList.remove('hidden');
+        let correctCount = 0;
+        for(let i=0; i < memoryLength; i++) if(userInput[i] === targetNumbers[i]) correctCount++;
+        let accuracy = ((correctCount / memoryLength) * 100).toFixed(1);
+        document.getElementById('final-result').innerHTML = `
+            <strong>◎ 反應速度 (目標: ${reactionTarget}):</strong><br>
+            <span style="color:#ff4757; font-size:1.4rem; font-weight:bold;">${reactionTime.toFixed(0)} ms</span><br><br>
+            <strong>◎ 記憶準確度 (${memoryLength}位):</strong><br>
+            正確答案：${targetNumbers}<br>
+            你的輸入：${userInput || "無"}<br>
+            準確率：<span style="color:#4a90e2; font-size:1.4rem; font-weight:bold;">${accuracy}%</span>
+        `;
+    }
+</script>
+</body>
+</html>
