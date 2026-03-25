@@ -88,6 +88,7 @@
     let timerId = null;
     let memoryLength = 3;
     let reactionTarget = 5;
+    let targetHasAppeared = false; 
 
     window.onload = function() { displayHistory(); };
 
@@ -116,8 +117,8 @@
         document.getElementById('step2').classList.remove('hidden');
         const displayDiv = document.getElementById('display');
         gameActive = true;
-        
-        let tickCount = 0; // 用來計算跳了幾次數字
+        targetHasAppeared = false; 
+        let tickCount = 0; 
 
         const tick = () => {
             if (!gameActive) return;
@@ -125,21 +126,18 @@
             let currentNum;
 
             if (tickCount <= 60) {
-                // 前 30 秒 (第 1~60 個數字)：絕對不出現目標數字
                 currentNum = Math.floor(Math.random() * 9 + 1);
                 if (currentNum === reactionTarget) {
                     currentNum = (reactionTarget % 9) + 1;
                 }
             } else if (tickCount === 61) {
-                // 第 30 秒 (第 61 個數字)：強制出現目標數字
                 currentNum = reactionTarget;
-                startTime = performance.now(); // 開始計算反應時間
+                startTime = performance.now(); 
+                targetHasAppeared = true; 
             } else {
-                // 後續時間：完全隨機 1-9 (有 1/9 機率再次出現目標)
                 currentNum = Math.floor(Math.random() * 9 + 1);
-                // 如果後續隨機剛好骰到目標數字，更新計時起點
                 if (currentNum === reactionTarget) {
-                    startTime = performance.now();
+                    startTime = performance.now(); 
                 }
             }
 
@@ -153,7 +151,8 @@
     function handleTrigger(e) {
         if (e) e.preventDefault();
         if (!gameActive) return;
-        if (document.getElementById('display').innerText === reactionTarget.toString()) {
+        
+        if (targetHasAppeared) {
             reactionTime = performance.now() - startTime;
             gameActive = false;
             clearTimeout(timerId);
@@ -226,3 +225,4 @@
 </script>
 </body>
 </html>
+
