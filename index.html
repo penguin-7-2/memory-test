@@ -120,6 +120,9 @@
         targetHasAppeared = false; 
         let tickCount = 0; 
         
+        // 隨機決定目標要在第 41 個到第 60 個數字之間出現 (20 ~ 30 秒)
+        let forcedTargetTick = Math.floor(Math.random() * 20) + 41;
+        
         let lastTickTime = performance.now();
 
         const tick = (currentTime) => {
@@ -130,12 +133,12 @@
                 tickCount++;
                 let currentNum;
 
-                if (tickCount <= 60) {
+                if (tickCount < forcedTargetTick) {
                     currentNum = Math.floor(Math.random() * 9 + 1);
                     if (currentNum === reactionTarget) {
                         currentNum = (reactionTarget % 9) + 1;
                     }
-                } else if (tickCount === 61) {
+                } else if (tickCount === forcedTargetTick) {
                     currentNum = reactionTarget;
                     startTime = currentTime; 
                     targetHasAppeared = true; 
