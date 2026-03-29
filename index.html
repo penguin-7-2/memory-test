@@ -120,7 +120,7 @@
         targetHasAppeared = false; 
         let tickCount = 0; 
         
-        // 隨機決定目標要在第 120 個到第 140 個數字之間出現 (60 ~ 70 秒)
+        // 隨機決定目標要在第 100 個到第 180 個數字之間出現 (50 ~ 90 秒)
         let forcedTargetTick = Math.floor(Math.random() * 81) + 100;
         
         let lastTickTime = performance.now();
@@ -131,26 +131,23 @@
             if (currentTime - lastTickTime >= 500) {
                 lastTickTime += 500; 
                 tickCount++;
-                let currentNum;
 
-                if (tickCount < forcedTargetTick) {
-                    currentNum = Math.floor(Math.random() * 9 + 1);
+                if (tickCount === forcedTargetTick) {
+                    // 目標出現：顯示目標數字、記錄時間、並停止數字跳動
+                    displayDiv.innerText = reactionTarget;
+                    displayDiv.className = 'highlight';
+                    startTime = currentTime; 
+                    targetHasAppeared = true; 
+                    return; // 終止 requestAnimationFrame 循環，畫面凍結
+                } else {
+                    // 目標尚未出現：繼續隨機跳動非目標數字
+                    let currentNum = Math.floor(Math.random() * 9 + 1);
                     if (currentNum === reactionTarget) {
                         currentNum = (reactionTarget % 9) + 1;
                     }
-                } else if (tickCount === forcedTargetTick) {
-                    currentNum = reactionTarget;
-                    startTime = currentTime; 
-                    targetHasAppeared = true; 
-                } else {
-                    currentNum = Math.floor(Math.random() * 9 + 1);
-                    if (currentNum === reactionTarget) {
-                        startTime = currentTime; 
-                    }
+                    displayDiv.innerText = currentNum;
+                    displayDiv.className = '';
                 }
-
-                displayDiv.innerText = currentNum;
-                displayDiv.className = currentNum === reactionTarget ? 'highlight' : '';
             }
             rafId = requestAnimationFrame(tick);
         };
@@ -164,6 +161,7 @@
         if (targetHasAppeared) {
             reactionTime = performance.now() - startTime;
             gameActive = false;
+            // 確保停止任何尚未清除的動畫幀
             cancelAnimationFrame(rafId);
             document.getElementById('step2').classList.add('hidden');
             document.getElementById('step3').classList.remove('hidden');
