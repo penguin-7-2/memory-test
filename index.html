@@ -13,8 +13,9 @@
         button { padding: 12px; font-size: 1.1rem; cursor: pointer; border: none; background: #4a90e2; color: white; border-radius: 10px; transition: 0.2s; font-weight: bold; width: 100%; margin: 5px 0; }
         button:active { transform: scale(0.98); }
         button:disabled { background: #cbd5e0; cursor: not-allowed; }
-        .mode-btns { display: flex; gap: 10px; margin-top: 5px; margin-bottom: 20px; }
-        .mode-btns button { background: #6c757d; font-size: 1rem; }
+        /* 針對模式按鈕區塊加入自動換行與彈性排版 */
+        .mode-btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; margin-bottom: 20px; justify-content: center; }
+        .mode-btns button { background: #6c757d; font-size: 1rem; flex: 1 1 calc(30%); margin: 0; padding: 10px 5px; }
         input { padding: 15px; font-size: 1.8rem; width: 90%; margin-bottom: 10px; text-align: center; letter-spacing: 4px; border: 3px solid #eee; border-radius: 12px; outline: none; margin-left: auto; margin-right: auto; user-select: auto; -webkit-user-select: auto; }
         .highlight { color: #ff4757; font-size: 7.5rem; }
         .info { color: #7f8c8d; margin-bottom: 15px; font-size: 0.95rem; }
@@ -42,6 +43,8 @@
             <button id="btn-4" onclick="initGame(4)" disabled>4 位數</button>
             <button id="btn-8" onclick="initGame(8)" disabled>8 位數</button>
             <button id="btn-12" onclick="initGame(12)" disabled>12 位數</button>
+            <button id="btn-20" onclick="initGame(20)" disabled>20 位數</button>
+            <button id="btn-25" onclick="initGame(25)" disabled>25 位數</button>
         </div>
         <div id="history-area">
             <div id="history-title">測試紀錄</div>
@@ -56,6 +59,7 @@
     <div id="step1" class="hidden">
         <h2>請記下這 <span id="count-label"></span> 個數字</h2>
         <div id="memory-target"></div>
+        <p class="info" style="margin-top: 10px;">提醒：看到 <strong id="step1-target-reminder" style="color:#ff4757"></strong> 時請立即按紅色按鈕</p>
         <button onclick="startDistraction()">開始測試</button>
     </div>
 
@@ -98,6 +102,9 @@
         document.getElementById('btn-4').disabled = !isValid;
         document.getElementById('btn-8').disabled = !isValid;
         document.getElementById('btn-12').disabled = !isValid;
+        // 同步加入新按鈕的啟用/禁用驗證
+        document.getElementById('btn-20').disabled = !isValid;
+        document.getElementById('btn-25').disabled = !isValid;
         if (isValid) reactionTarget = parseInt(input.value);
     }
 
@@ -105,9 +112,12 @@
         memoryLength = len;
         targetNumbers = "";
         for(let i=0; i<len; i++) targetNumbers += Math.floor(Math.random() * 10).toString();
+        
         document.getElementById('count-label').innerText = len;
         document.getElementById('memory-target').innerText = targetNumbers;
         document.getElementById('info-target').innerText = reactionTarget;
+        document.getElementById('step1-target-reminder').innerText = reactionTarget;
+        
         document.getElementById('step-setup').classList.add('hidden');
         document.getElementById('step1').classList.remove('hidden');
     }
@@ -120,7 +130,6 @@
         targetHasAppeared = false; 
         let tickCount = 0; 
         
-        // 隨機決定目標要在第 100 個到第 180 個數字之間出現 (50 ~ 90 秒)
         let forcedTargetTick = Math.floor(Math.random() * 81) + 100;
         
         let lastTickTime = performance.now();
@@ -133,14 +142,12 @@
                 tickCount++;
 
                 if (tickCount === forcedTargetTick) {
-                    // 目標出現：顯示目標數字、記錄時間、並停止數字跳動
                     displayDiv.innerText = reactionTarget;
                     displayDiv.className = 'highlight';
                     startTime = currentTime; 
                     targetHasAppeared = true; 
-                    return; // 終止 requestAnimationFrame 循環，畫面凍結
+                    return; 
                 } else {
-                    // 目標尚未出現：繼續隨機跳動非目標數字
                     let currentNum = Math.floor(Math.random() * 9 + 1);
                     if (currentNum === reactionTarget) {
                         currentNum = (reactionTarget % 9) + 1;
@@ -161,7 +168,6 @@
         if (targetHasAppeared) {
             reactionTime = performance.now() - startTime;
             gameActive = false;
-            // 確保停止任何尚未清除的動畫幀
             cancelAnimationFrame(rafId);
             document.getElementById('step2').classList.add('hidden');
             document.getElementById('step3').classList.remove('hidden');
@@ -184,6 +190,7 @@
             <span style="color:#ff4757; font-size:1.4rem; font-weight:bold;">${reactionTime.toFixed(0)} ms</span><br><br>
             <strong>◎ 記憶準確度 (${memoryLength}位):</strong><br>
             正確答案：<span style="word-break:break-all;">${targetNumbers}</span><br>
+            你的輸入：<span style="word-break:break-all;">${userInput || "無"}</span><br>
             準確率：<span style="color:#4a90e2; font-size:1.4rem; font-weight:bold;">${accuracy}%</span>
         `;
     }
